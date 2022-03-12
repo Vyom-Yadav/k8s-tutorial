@@ -1,0 +1,52 @@
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: spring-boot-app
+  labels:
+    app: spring-boot-crud
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spring-boot-crud
+  template:
+    metadata:
+      labels:
+        app: spring-boot-crud
+    spec:
+      containers:
+        - name: spring-boot-app
+          image: yvyom/k8s-tutorial:0.0.1-SNAPSHOT
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: mysql-root-username
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: mysql-root-password
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: mysql-configmap
+                  key: database_url
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spring-boot-app-service
+spec:
+  selector:
+    app: spring-boot-crud
+  type: LoadBalancer
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+      nodePort: 30000 # Cannot do 8080, range starts from 30000, used for specifying connection to external world
+
